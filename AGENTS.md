@@ -237,3 +237,31 @@ What changed is only where the commit lands.
 - Don't declare a statement a "Gate-1 frozen anchor" while the definitions it references are unvalidated — freeze is dependency-ordered (typed → validated → frozen; see `docs/VALIDATION_SUITE.md`). A `sorry` is only "honest" over validated definitions; three of the first seven sat on false statements.
 - Don't cite upstream P/NP numbers without checking `docs/UPSTREAM_TRACKING.md` — the computational model is contested and numbers don't transfer across models
 - Don't commit machine-specific configuration (paths, SSH, local toolchain) — that belongs in `AGENTS_LOCAL.md`, which is gitignored
+
+### GitHub token lifecycle (verified 2026-09-27, all surfaces)
+
+`GITHUB_TOKEN` is short-lived and has no agent-side refresh step: the platform
+re-injects the current value into each command whose text contains the literal
+string `GITHUB_TOKEN`. A fresh value arrives by referencing it again in a new
+command, not by retrying.
+
+- Do not trust an early `export`: a later command that names `GITHUB_TOKEN` gets
+  the platform's current value and overwrites whatever the shell held.
+- A long-running process (server, supervisor) captures the token at start. After
+  a rotation it 401s on every call until restarted.
+- `git push` with the token embedded in the `origin` URL is the same trap: after
+  a rotation it prompts for a password and reads as a hang. Re-point the remote
+  and use `GIT_TERMINAL_PROMPT=0`.
+
+401 bodies: `Bad credentials` = rotated (transient - reference `$GITHUB_TOKEN`
+again in a new command); `Requires authentication` = no token sent; `Resource not
+accessible by integration` = App permission gap (permanent, stop).
+
+`gh` prefers `GH_TOKEN` over `GITHUB_TOKEN`. Do not `unset` it; pin it so `gh`
+cannot fall back to a stale or absent one:
+
+```bash
+export GH_TOKEN=$GITHUB_TOKEN && gh api user -q .login
+```
+
+Full mechanism and evidence: `portfolio-ops/ACCESS_AND_IDENTITIES.md`.
