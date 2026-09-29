@@ -34,11 +34,16 @@ conventions; this doc is the "what do I do on day one" summary.
    smoke** (the committed `tooling/galaxy/galaxy.html` must match a fresh
    regeneration) has bitten two sessions (#112, #118) because
    `docs/SORRY_TRACKER.md`, `docs/ROADMAP.md`, `formalization.yaml` and the
-   review points are all embedded in that page. Run:
+   review points are all embedded in that page. The **Review-inbox index
+   smoke** (`reviews/INBOX.md` must match `review_inbox.py index`) is the same
+   failure class (#119). Run:
    ```bash
-   python3 tooling/pre_push_check.py         # exit 1 if galaxy.html is stale
+   python3 tooling/pre_push_check.py         # exit 1 if a tracked artifact is stale
    python3 tooling/pre_push_check.py --fix   # regenerate in place, then git add it
    ```
+   The check covers every listed artifact; a new CI-only staleness step should
+   extend the `CHECKS` list in `tooling/pre_push_check.py` rather than add a
+   one-off script.
 
 ## Current state (2026-09-16, run=20260916-1622-p8k2)
 
