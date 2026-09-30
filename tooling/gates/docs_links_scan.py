@@ -34,21 +34,23 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent.parent
 DOCS = ROOT / "docs"
 
-# Bare Lean-file names that must carry a lean/PleaNP/ prefix to be real.
-BARE_LEAN_NAMES = (
-    "Oracle.lean", "OracleComplexity.lean", "OracleSmoke.lean",
-    "OracleUpstreamP.lean", "Relativization.lean", "BGSDiagonal.lean",
-    "BarrierCalculus.lean", "BoundaryProbe.lean",
-)
-
 # Markers that make an otherwise-nonexistent target intentional.
 ASPIRATIONAL_MARKERS = ("(pending #", "(to be created)", "(gitignored")
+
+# Lean modules that design/plan docs cite ahead of creation. Kept explicit so
+# "planned, not yet built" is a decidable whitelist rather than an accident of
+# the scan missing the file. Remove an entry once the file lands (it will then
+# resolve on disk).
+PLANNED_LEAN_FILES = ("NaturalProofs.lean",)
 
 
 def _find_refs(text: str) -> set[str]:
     refs: set[str] = set()
     for m in re.finditer(r"`([^`]+)`", text):
         s = m.group(1).strip()
+        # Line-wrapped backtick spans are prose artifacts, not refs.
+        if "\n" in s:
+            continue
         if re.search(r"\.(lean|md|py|json|toml)\b", s):
             refs.add(s)
     for m in re.finditer(r"\[[^\]]*\]\(([^)]+)\)", text):
@@ -107,10 +109,49 @@ def _whitelisted(s: str) -> bool:
     # External/reference-sibling refs: muse provenance, etc.
     if s.startswith(("muse/", "rubato/")) or s in ("TASK_WORKFLOW.md",):
         return True
+    # Cross-repo refs into the sibling projects (Maith et al.) — same class as
+    # muse/rubato above.
+    if any(f"docs/experiments/{n}" in s for n in
+           ("BENCHMARK_CORPUS_PLAN.md", "AXIOM_DISCOVERY.md", "TRANSFER_TARGETS.md")):
+        return True
+    # Documented planned-but-unbuilt Lean modules (see PLANNED_LEAN_FILES).
+    if s.split("/")[-1] in PLANNED_LEAN_FILES:
+        return True
     return False
 
 
+def _strip_line_cite(s: str) -> str:
+    """Drop a trailing ``:NN``/``:NN-NN``/``:NN,MM,...`` line-cite.
+
+    Line-cites are not file refs; the base path is what resolves. Handles the
+    comma-list form used for multi-line sites (``OracleV5Tests.lean:138,155,165``),
+    which the old single-cite regex missed.
+    """
+    m = re.match(r"^(.+?\.(?:lean|md|py|json)):[\d,\-]+$", s)
+    return m.group(1) if m else s
+
+
+def _find_on_disk(s: str) -> bool:
+    """True when ``s`` names a file anywhere in the tree.
+
+    ``docs/`` routinely cites Lean modules tersely — by bare basename
+    (``AC0.lean``) or by a partial path (``Barriers/Algebrization.lean``) — rather
+    than by the full ``lean/PleaNP/...`` path. Resolve on either the exact
+    repo-relative path or a trailing path-component match; the file is real, only
+    the citation is terse.
+    """
+    if (ROOT / s).exists():
+        return True
+    suffix = "/" + s.lstrip("/")
+    return any(p.is_file() and (p.name == s or p.as_posix().endswith(suffix))
+               for p in ROOT.rglob("*"))
+
+
 def _resolves(s: str, doc: Path) -> bool:
+    # A line-cite resolves if its base path resolves.
+    base_cite = _strip_line_cite(s)
+    if base_cite != s:
+        return _resolves(base_cite, doc)
     try:
         if (doc.parent / s).resolve().exists() or (ROOT / s).exists():
             return True
@@ -122,12 +163,8 @@ def _resolves(s: str, doc: Path) -> bool:
             return True
     except OSError:
         pass
-    # line-cite: Foo.lean:NN resolves if the base file resolves doc-relative
-    m = re.match(r"^(.+\.(?:lean|md|py)):\d+(?:-\d+)?$", s)
-    if m and (m.group(1) != s):
-        base = m.group(1)
-        return _resolves(base, doc)
-    return False
+    # Terse doc citation (bare basename or partial path); real if on disk.
+    return _find_on_disk(s)
 
 
 def scan(report: bool = False) -> list[tuple[Path, str, str]]:
