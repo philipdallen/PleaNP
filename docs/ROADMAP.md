@@ -52,7 +52,26 @@ PleaNP imports whichever lands upstream, rather than picking a side. Our only lo
 - **3b (natural proofs):** formalizes the *conditional* (`OWF exists ⟹ no natural property gives superpoly lower bounds`); the one-way function enters as a **hypothesis**, not a constructed object — PleaNP does *not* build a PRF, it states the conditional cleanly (no importable Lean/Coq/Isabelle crypto substrate exists; see `docs/PRIOR_ART.md`, crypto-substrate section).
 - **3c (algebrization):** pin the **original Aaronson–Wigderson 2009 (multiquadratic) formulation** as the v1 target; track the ITCS 2026 multilinear-strengthening as a candidate v2, not part of v1 (prevents formalizing a moving folk theorem).
 
-**Status:** Not started. Depends on Rung 2 (oracle machines, P/NP).
+**Status:** Partly landed. The oracle-relative substrate this rung needed (Rung 2's
+oracle-machine layer, `lean/PleaNP/Computability/`) is in place locally, and the
+two barrier theorems with no upstream dependency are rendered/proved:
+- **3a/3c render + proof work:** `lean/PleaNP/Barriers/Relativization.lean` renders
+  the frozen BGS statement (two tracked `sorry`s for the equality/inequality proofs);
+  `lean/PleaNP/Barriers/RelativizationProof.lean` carries the zero-`sorry` consequence
+  proofs. `lean/PleaNP/Barriers/Algebrization.lean` renders the AW09 v1 statement and
+  `lean/PleaNP/Barriers/AlgebrizationProof.lean` proves its three consequence theorems
+  (`uniform_collapse_contradicted_by_separating`,
+  `uniform_separation_contradicted_by_equalizing`, `no_algebrizing_uniform_resolution`)
+  zero-`sorry`. All three modules build in CI.
+- **BGS diagonalization substrate:** the `lean/PleaNP/Barriers/Diagonal*.lean` chain and
+  `lean/PleaNP/Barriers/BGSDiagonal.lean` are committed;
+  `lean/PleaNP/Barriers/DiagonalUB.lean` is zero-`sorry`. Only
+  `lean/PleaNP/Barriers/DiagonalSyntax.lean` is in the named CI build list — the rest of
+  `Diagonal*.lean` is committed but not yet built by CI (its own follow-up).
+- **3b (natural proofs):** statement/design specs only (`docs/STATEMENTS/NaturalProofs*.md`);
+  no Lean module yet.
+- **Genuinely open:** the full BGS `P^A = NP^A` / `P^B ≠ NP^B` proofs (the two tracked
+  `sorry`s), and the natural-proofs module.
 
  **Statement-fidelity tooling (adopted DEC-022,2026-09-10):** every frozen barrier statement will additionally ship as a Comparator-style challenge module + JSON pin, per `docs/STATEMENTS/ComparatorChallenge.template.md`(and be recorded in the repo `formalization.yaml` manifest)-- machinery adopted from the OpenAI `NavierStokesAndEuler` release(2026-09-08/10);see `docs/LEAN_FORMALIZATION_LESSONS_2026-09-10.md`. Phasing: when a barrier statement is next touched(`#18` BGS separating-oracle proof path), create `lean/PleaNP/Challenges/Relativization.lean` + `lean/ComparatorChallenges/Relativization.json` perthe template, with the `Comparator` lake dependency aspirational(no CI change until Comparator is available).
 
@@ -67,7 +86,21 @@ PleaNP imports whichever lands upstream, rather than picking a side. Our only lo
 - Proof complexity: resolution size/width, Frege systems.
 - The Williams (2011) result (NEXP ⊄ ACC⁰) — the one known non-relativizing, non-natural, non-algebrizing lower bound — as the existence proof that barrier-evading techniques exist.
 
-**Status:** Not started. Depends on Rung 3.
+**Status:** Partly landed. Depends on Rung 3 (substrate), satisfied locally.
+- **Circuit complexity:** `lean/PleaNP/Circuits/Basic.lean`,
+  `lean/PleaNP/Circuits/AC0.lean`, `lean/PleaNP/Circuits/MustRefute.lean`
+  are committed and built in CI. `lean/PleaNP/Circuits/Monotone.lean`,
+  `lean/PleaNP/Circuits/Restriction.lean`, `lean/PleaNP/Circuits/Switching.lean`,
+  `lean/PleaNP/Circuits/MonotoneApprox.lean` are committed but not in the named CI build list.
+- **Proof complexity:** `lean/PleaNP/ProofComplexity/Resolution.lean` is committed and built in CI.
+- **Williams (2011) result:** `lean/PleaNP/Barriers/Williams.lean`,
+  `lean/PleaNP/Barriers/WilliamsTransfer.lean`, `lean/PleaNP/Barriers/WilliamsSat.lean`,
+  `lean/PleaNP/Barriers/WilliamsAssembly.lean` are committed and built in CI; the
+  statement is frozen and the transfer elaborator emits it, but the full zero-`sorry`
+  proof of `NEXP ⊄ ACC⁰` waits on the tracked #98 sub-lemma (Shah–Shetty Good-SAT
+  packing).
+- **Genuinely open:** the `NEXP ⊄ ACC⁰` proof itself, and barrier-classification
+  proofs that these lower bounds are natural/relativizing/algebrizing.
 
 ---
 
@@ -117,7 +150,13 @@ PleaNP imports whichever lands upstream, rather than picking a side. Our only lo
 
 **Purpose:** Measure AI progress honestly. Also the testbed where representation-retrieval questions (à la Maith's H6) get a concrete evaluation.
 
-**Status:** Not started.
+**Status:** Tier-1 baseline partially landed. The first Tier-1 baseline datapoint
+(`lean/PleaNP/Benchmark/Closure.lean`, issue #81 Pass 2) is committed and built in
+CI: zero-`sorry` membership facts about `UpstreamPolyTime` (∅ and ⊤ are in P),
+i.e. a textbook complexity-class fact formalized through the gates. The canonical
+T1.4 closure statements (P closed under ∩, ∪, ¬) are not yet theorems — blocked on
+`TM2ComputableInPolyTime.comp`, a `proof_wanted` upstream in Mathlib. No baseline
+AI measurements exist yet.
 
 ---
 
@@ -171,7 +210,7 @@ verified CircuitSAT algorithm.
 
 Each is independently publishable. None is P vs NP, and that's the point.
 
-**Status:** Not started. Depends on Rung 10.
+**Status:** Not started. Depends on Rung 9 (the proof-search loop).
 
 ---
 
