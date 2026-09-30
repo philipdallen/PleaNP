@@ -139,6 +139,44 @@ be a test failure.
 Run: `python3 tooling/gates/workflow_scan.py` — exit 0 clean, 1 violations,
 2 usage error. Wired into CI (scan + unit tests).
 
+## Gate: docs-link scanner (`docs_links_scan.py`, 2026-09-30; #46/#172)
+
+`docs_links_scan.py` resolves every backtick-code file ref and markdown link in
+`docs/` against the repo tree and reports references that do not resolve to an
+existing file. Whitelisted classes (upstream `Mathlib/` paths, `<placeholder>`
+refs, `.yaml`/`.yml` manifests, `AGENTS_LOCAL.md`, `Challenges`/`Comparator`
+aspirational files, wildcards, and `file:NN` line cites) are excluded. It is a
+docs-hygiene check, not a Lean gate: a clean exit means every non-whitelisted
+reference in `docs/` points at a real file (or an explicitly-aspirational one
+carrying a marker).
+
+Calibrated to exit 0 on `main` in #171 — it resolves terse Lean citations by
+bare basename/partial path and strips `file:NN`/`file:NN,MM` line cites before
+resolving. This section makes it a **gate**, not just a script: the scan runs in
+CI on every push/PR to `main` (`.github/workflows/ci.yml`, step "Docs link scan").
+
+Run: `python3 tooling/gates/docs_links_scan.py` — exit 0 clean, 1 broken refs,
+2 usage error. `--report` prints the per-doc breakdown. Wired into CI.
+
+## Wired vs. manual gates (2026-09-30; #172)
+
+"Wired" is a decidable property: a gate script is **CI-wired** iff its own check
+(or a smoke invocation of it) is run from `.github/workflows/ci.yml`. A script
+whose *unit tests* run in CI but whose *check* does not is **manual check,
+CI-wired tests** — the tests pin the scanner's behaviour, but the check itself is
+invoked on demand during authoring, not per-push. This register exists so a
+"wired" claim is checkable rather than assumed.
+
+| Gate script | Status | Rationale |
+|---|---|---|
+| `docs_links_scan.py` | **CI-wired (scan)** | Docs-hygiene scan, stdlib-only, deterministic; step added to CI in #172. |
+| `lean_readback.py` / `readback.py` | **CI-wired (smoke + tests)** | The read-back smoke step runs a real declaration, and `test_readback.py` runs in CI. The LLM-backed translator half stays off by default (DEC-021 — PleaNP uses no external LLM). |
+| `statement_lint.py` | **CI-wired (smoke + tests)** | Smoke on two authored statements plus `test_statement_lint.py` run in CI. |
+| `multi_render.py` | **Manual check, CI-wired tests** | `test_multi_render.py` runs in CI. The driver is invoked per-target during authoring (each `churn/<slug>/` campaign is worked individually), so it is not a per-push gate. |
+| `corpus_campaign.py` | **Manual check, CI-wired tests** | `test_corpus_campaign.py` runs in CI (counted-table regression guard). Collation runs per-campaign during authoring. |
+| `pass_scan.py` | **Manual check, CI-wired tests** | `test_pass_scan.py` runs in CI. The scan is a live-GitHub queue-health sweep (`GITHUB_TOKEN`), run as a start-of-session sweep step, not a per-push CI gate. |
+| `effort_summary.py` | **Manual check, CI-wired tests** | `test_effort_summary.py` runs in CI. The re-sum needs live GitHub (or a JSON dump) and is run on demand when the effort ledger is updated. |
+
 ## Gate 7 (Tier 1): binder usage / lethality scanner (2026-08-18)
 
 `binder_usage_scan.py` checks that every named parameter, field, and
