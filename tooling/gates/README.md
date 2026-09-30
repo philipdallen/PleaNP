@@ -215,23 +215,36 @@ offline JSON dump). One command replaces hand-summing the ledger:
   `tests/test_effort_summary.py`, CI-wired.
 
 
-## Rung-5 `#barrier_check` verdict harness (`barrier_check_test.py`; 2026-09-07; #3
+## Rung-5 `#barrier_check` verdict harness (`barrier_check_test.py`; 2026-09-07; #3; extended #170)
 
-Asserts the four `#barrier_check` verdicts logged by
-`lean/PleaNP/Calculus/BarrierCalculus.lean` during compile:
+Asserts the `#barrier_check` verdicts logged by the elaborator during compile:
 
-  - `thhStatement`            -> "relativizes, not P-vs-NP-shaped"
-  - `abstractPVsNP`           -> "DEAD"
-  - `plainRelHeuristic`       -> "relativizes, not P-vs-NP-shaped"
-  - `nonRelativizingControl`  -> "Inconclusive"
+  - `PleaNP.Calculus.thhStatement`            -> "relativizes, not P-vs-NP-shaped"
+  - `PleaNP.Calculus.abstractPVsNP`           -> "DEAD"
+  - `PleaNP.Calculus.plainRelHeuristic`       -> "relativizes, not P-vs-NP-shaped"
+  - `PleaNP.Calculus.nonRelativizingControl`  -> "Inconclusive"
+  - `PleaNP.Calculus.concreteClassMembership` -> "DEAD"
+  - `PleaNP.Calculus.bgsMetaStatement`        -> "Inconclusive"
+  - `PleaNP.Barriers.Williams.williams_transfer`             -> "Inconclusive"
+  - `PleaNP.Barriers.Williams.NEXP_not_subset_ACC0`          -> "Inconclusive"
+  - `PleaNP.Barriers.Williams.williams_lower_bound_compiled` -> "Inconclusive"
 
 The elaborator's verdict print via `logInfo`;CI's build step `tee`s its output
 to a log file, then the harness runs on that log and fails if any expected
 verdict segment is missing or wrong - so a regression (a DEAD flipping to
 Inconclusive, an instance that stops synthesizing, a message rewrite) kills
 the build mechanically. Dash-family chars are folded before matching
-(terminal/encoding-tolerant). Unit tests: `tests/test_barrier_check_test.py`
-(stdlib, no Lean, no secrets).
+(terminal/encoding-tolerant).
+
+**Drift guard (#170).** The final three assertions and the `--check-drift` mode
+close the hole behind the audit's "a check that cannot fail is not a check"
+finding: the harness only asserts declarations it knows about, so a new
+`#barrier_check <decl>` added to a Lean module compiled green with its verdict
+unasserted. `--check-drift [LEAN_ROOT]` scans the Lean sources (comments
+stripped), and CI fails if any `#barrier_check` invocation is absent from
+`EXPECTED`. It is stdlib-only and needs no Lean toolchain. Unit tests:
+`tests/test_barrier_check_test.py` (stdlib, no Lean, no secrets).
 
 Usage: `python3 barrier_check_test.py <build-log>` (or `--run-lake [MODULE]`
-to build locally first). See `docs/STATEMENTS/BarrierCheckVerdicts.spec.md`.
+to build locally first, or `--check-drift [LEAN_ROOT]` to scan the sources).
+See `docs/STATEMENTS/BarrierCheckVerdicts.spec.md`.

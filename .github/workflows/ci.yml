@@ -49,9 +49,15 @@ jobs:
       - name: Build clean modules (Basic + v4 substrate + Barrier Calculus + Challenges; sorry-as-error)
         run: lake build PleaNP.Basic PleaNP.Calculus.BarrierCalculus PleaNP.Calculus.ConcreteSeed PleaNP.Calculus.Soundness PleaNP.Calculus.Classification PleaNP.Barriers.RelativizationProof PleaNP.Barriers.Algebrization PleaNP.Barriers.Williams PleaNP.Benchmark.Closure PleaNP.ProofComplexity.Resolution PleaNP.Barriers.WilliamsSat PleaNP.Barriers.WilliamsTransfer PleaNP.Barriers.WilliamsAssembly PleaNP.Barriers.LowerBoundCompiler PleaNP.Barriers.DiagonalSyntax PleaNP.Circuits.Basic PleaNP.Circuits.AC0 PleaNP.Circuits.MustRefute PleaNP.Computability.Oracle PleaNP.Computability.OracleComplexity PleaNP.Computability.OracleSmoke PleaNP.Computability.OracleV5Tests PleaNP.Challenges.Relativization 2>&1 | tee /tmp/barcheck.log
         working-directory: lean
-      - name: Barrier-check verdict harness (Rung-5,#3; asserts the four #barrier_check verdict lines)
+      - name: Barrier-check verdict harness (Rung-5,#3; asserts the #barrier_check verdict lines)
         run: python3 ../tooling/gates/barrier_check_test.py /tmp/barcheck.log
         working-directory: lean
+      - name: Barrier-check drift guard (every #barrier_check invocation is asserted; #170)
+        # The verdict harness can only fail on invocations it knows about; a new
+        # `#barrier_check` added to a Lean module would otherwise compile green
+        # forever with its verdict unasserted. This scans the sources and fails
+        # if any invocation is absent from EXPECTED. Stdlib-only, no Lean needed.
+        run: python3 tooling/gates/barrier_check_test.py --check-drift lean
       - name: Build tests exe (funeq/funne propagation + DEAD verdict;#30)
         run: lake build tests
         working-directory: lean
