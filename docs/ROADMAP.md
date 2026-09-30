@@ -119,11 +119,11 @@ two barrier theorems with no upstream dependency are rendered/proved:
  - if every leaf is relativizing and the conclusion separates or collapses `P`/`NP` — emit **"DEAD: this proof relativizes"**;
  - if any leaf is non-relativizing — emit **"Inconclusive."**
 
-**Unit-test it against the time hierarchy theorem**, which genuinely *does* relativize —that's the correctness check before trusting it on anything else. The time-hierarchy theorem (THH: `DTIME(f) ⊊ DTIME(g)` for `f = o(g)` reasonable time bounds) is relativizing (it holds relative to any oracle with the same proof), so `#barrier_check` on a THH-shaped statement must emit "DEAD"; because THH is not a P-vs-NP claim, this alsovalidates the tool outputs "Inconclusive" for the P-vs-NP-shaped claims that aren't actually barrier-laden. Holds also as a negative test: a proof of `P ≠ NP` *without* any `Relativizing` instance must emit "Inconclusive" (not DEAD), since non-relativizing proofs escape BGS.
+**Unit-tested via a log-asserting harness** (`tooling/gates/barrier_check_test.py`, CI-wired): the elaborator's `logInfo` verdict lines are captured from the build log and asserted against an `EXPECTED` table, so a wrong verdict fails the job mechanically rather than being advisory prose. The THH-shaped declaration `thhStatement` is asserted to emit "relativizes, not P-vs-NP-shaped" (it relativizes but does not separate/collapse P/NP, so it is not DEAD); `abstractPVsNP` is the DEAD case, and `nonRelativizingControl` (a `P ≠ NP`-shaped claim with no `Relativizing` instance) is the Inconclusive negative control. A drift guard (`--check-drift`, #170) additionally fails CI if any `#barrier_check` invocation in the sources is missing from `EXPECTED`.
 
 **Placement:** `lean/PleaNP/Calculus/BarrierCalculus.lean` (new directory `PleaNP.Calculus`. `#barrier_check` is an elaborator command, so it needs `elab` syntax — the local agent renders it; prototypes may live in `lean/PleaNP/Calculus/` and a `#barrier_check`-marked test file.
 
-**Status:** In progress (prototype landing —thenew first concrete task of the scope expansion; see `lean/PleaNP/Calculus/BarrierCalculus.lean` and `docs/decisions/LOG.md` DEC-012.) Unit test against THH shape. NOT gated on upstream P/NP — it is meta-level (typeclass propagation over *relative* classes), so it can proceed while Rung 2's upstream substrate is still blocked.
+**Status:** In progress (prototype landing —thenew first concrete task of the scope expansion; see `lean/PleaNP/Calculus/BarrierCalculus.lean` and `docs/decisions/LOG.md` DEC-012.) Verdicts are asserted by `tooling/gates/barrier_check_test.py` (THH-shaped / DEAD / non-relativizing-control), with a drift guard for unasserted invocations (#170). NOT gated on upstream P/NP — it is meta-level (typeclass propagation over *relative* classes), so it can proceed while Rung 2's upstream substrate is still blocked.
 
 
 
@@ -232,7 +232,7 @@ Each is independently publishable. None is P vs NP, and that's the point.
 | 2 | Oracle machines formalized; P/NP imported from upstream |
 | 3 | Relativization + natural-proofs conditional(OWF as hypothesis) + algebrization (AW09 v1) compile, zero `sorry` |
 | 4 | AC⁰ lower bounds + Williams formalizedwith barrier-classification proofs |
-| 5 | `Relativizing` typeclass + `#barrier_check` elaborated and unit-tested against the time-hierarchy theorem(DEAD)and a non-relativizing control(Inconclusive) |
+| 5 | `Relativizing` typeclass + `#barrier_check` elaborated, with verdicts asserted by a log-asserting harness (THH-shaped / DEAD / non-relativizing control) and a drift guard for unasserted invocations (#170) |
 | 6 | Machine-checked P/NP model-equivalence anchor + `P_eq_NP_iff` rendered via explicit `#eval`-able Levin-search term; search⟶decision gap lemma stated/scoped |
 | 7 | Benchmark suite exists with baseline AI measurements |
 | 8 | Williams transfer elaborator (`#lower_bound_compile`) emits verified `NEXP ⊄ C` given a verified CircuitSAT algorithm + runtime bound |
