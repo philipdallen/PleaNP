@@ -530,3 +530,16 @@ This is the **third instance of the same corruption signature** recorded in #101
 - **Build a target, not the full tree:** PleaNP's full-tree `lake build` still fails on the two documented pending-sorry modules (`OracleUpstreamP`, `Relativization`). Consumers must build the `Circuits` closure specifically.
 - **Import weight:** `PleaNP.Circuits.Basic` begins with `import Mathlib`, so consumers inherit the full Mathlib closure.
 - **CI trigger gap:** `.github/workflows/ci.yml` triggers only on pushes to `main` and PRs to `main`, so **`dev` pushes are not automatically verified**. This change was verified locally (builds + gates + the end-to-end consumer) rather than by CI on `dev`. Worth deciding separately whether `dev` should be in the trigger list — flagged, not changed here, since it is a policy call.
+
+### DEC-028
+
+**Date:** 2026-10-01
+**Status:** Active
+**Tier:** 1
+**Scope:** Task protocol
+**Origin:** human
+**Decision:** Triage decisions for the RLM Analyzer pass over PleaNP. D1: an RLM Analyzer report is unverified LLM triage, and a finding becomes a task only after it is confirmed against raw files in this repo. D2: a refuted or stale finding gets no task; it is recorded in the triage summary with the evidence that refutes it. D3: generic web-application security advice (authentication, authorization, API validation, security headers, WAF, pen testing, SAST/DAST, log anomaly detection) does not apply to a Lean 4 / Python library and gate repo that runs no web service, so no task is filed for it. D4: one task per verified finding, no bundling and no extra scope. D5: anything that needs a human choice is filed as a blocker for the owner, not decided by the agent.
+**Rationale:** The reports are a triage aid, not a source of truth. Verification against raw artifacts is the only step that separates a real defect from a plausible-sounding one, which is the rule the integrity gates already apply to results. D4 keeps each task claimable in one run with an unambiguous acceptance check.
+**References:**
+  - `rlm-triage-summary.md` in `philipdallen/portfolio-ops` (branch `tasks/rlm-triage-2026-10-01`)
+  - `docs/MULTI_AGENT_WORKFLOW.md` (task definition, blocker mechanics)
