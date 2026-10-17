@@ -204,6 +204,16 @@ evidence* requirement still stands (gate commands and their output pasted in the
 done comment), and `needs-review` still marks work that a human must accept.
 What changed is only where the commit lands.
 
+## Three-repo shared code
+
+`tooling/auditor.py`, `tooling/tests/test_auditor.py`, and
+`tooling/tests/test_hub_sweep.py` are **byte-identical across Maith, PleaNP,
+and ephapse**, with **Maith's copy canonical** (it carries the status-branch
+support the others lack). Do not diverge this repo's copies; sync from Maith
+via PR. The daily audit's `tooling-drift` check watches for silent divergence.
+
+Divergence is silent drift, not a merge conflict.
+
 ## Conventions
 
 - **Decision log:** Append-only; format `### DEC-0XX` with Date, Status, Scope, Decision, Rationale
