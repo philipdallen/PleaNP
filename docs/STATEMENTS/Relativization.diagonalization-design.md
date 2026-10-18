@@ -77,7 +77,7 @@ The BGS clause-(b) strategy (per `Relativization.proof-strategy.md` §2):
 
 | # | Sub-task | Lean obligation | Blocked by |
 |---|---|---|---|
-| D1 | **Counting lemma**: `exists n, p.eval n < 2^n` (per-stage `2^n >` queries) | new lemma in a `Combinatorics`/`lean/PleaNP/Barriers/Counting.lean` (to be created) - the unqueried-string existence crux; Mathlib hooks below | None (pure Nat/Polynomial) |
+| D1 | **Counting lemma**: `exists n, p.eval n < 2^n` (per-stage `2^n >` queries) | new lemma in a `Combinatorics`/`lean/PleaNP/Barriers/Counting.lean (to be created)` - the unqueried-string existence crux; Mathlib hooks below | None (pure Nat/Polynomial) |
 | D2 | **Finite query family reindex** (per #27 option (a/(c)): `Bits (Fin N)` or per-length `Bits n` with bounded `N` | private bounded `Query`/`Bits` rework in `lean/PleaNP/Barriers/BGSDiagonal.lean` | #27 decision |
 | D3 | **Machine enumeration**: poly-time oracle machines as Nats (`M_i <-> code`) | encoding of `FinTM2`+`Machine`; or reuse `Partrec.Code` if the tournament weakens to partial-recursive machines | substrate + #27 decision |
 | D4 | **Stage construction**: `B : Nat -> Oracle Query` (monotone stages `B_k subseteq B_{k+1}}`;diagonalization at stage k not undone later | inductive def + monotonicity invariant | D2, D3 |

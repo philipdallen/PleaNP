@@ -106,7 +106,7 @@ The runnable test lives in the `tests` lib (not the clean build set) so a
 future `sorry`-based fixture cannot leak into the prove-stage hygiene scan.
 When #98 lands a zero-`sorry` proof of `SubExpCircuitSATT` under (say)
 `PleaNP.Barriers.Williams.acc0SatSubExpBound_proved`, land
-`lean/tests/LowerBoundCompilerAcceptPath.lean` as:
+`lean/tests/LowerBoundCompilerAcceptPath.lean (planned)` as:
 
 ```lean
 import PleaNP.Barriers.LowerBoundCompiler
@@ -185,6 +185,6 @@ it.
 ---
 
 _Last updated: 2026-09-19 (issue #109, deliverable = this spec). The
-runnable `lean/tests/LowerBoundCompilerAcceptPath.lean` lands with #98's
+runnable `lean/tests/LowerBoundCompilerAcceptPath.lean (planned)` lands with #98's
 `SubExpCircuitSATT` proof; the accept path is otherwise unreachable by
 design, and asserting it today would require a dishonest contract._
