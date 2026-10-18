@@ -390,6 +390,22 @@ monomial to be satisfied there) and its packaged exactness form
   `MonomialEval`-shaped restatement `monomialEval_imp_eval'` is not yet
   referenced by any scanned declaration.
 
+**Update (2026-09-22, #74 Pass 3 item 2 — counting bound).** The Razborov
+counting bound landed:
+
+- `truncate_subset_powersetCard_biUnion` — the truncated carrier is a
+  subfamily of the `≤ r`-subset layers of `Fin n`.
+- `truncate_card_le_sum_choose` — `|truncate r A| ≤ ∑_{k ≤ r} C(n,k)`, the
+  bound that depends on `n` and `r` alone, not on the circuit. The
+  scanner's `unreferenced_decl` note is a false dead-code verdict: the
+  lemma is the counting bound the CLIQUE pigeonhole instantiation consumes
+  (Pass 3 item 3 / the Rung-4 assembly), the same disposition as its
+  sibling `truncate_size_le`.
+
+`truncate_subset_powersetCard_biUnion` is **not** flagged — it is
+referenced by `truncate_card_le_sum_choose`'s proof. `truncate_card_le_sum_choose`
+is added to EXPECTED in `gate_review_register_check.py`.
+
 ## 4. BGS clause-(a) A2/A3 console-oracle API (issue #63)
 
 **Sweep lineage:** run=20260913-1020-GY2l (issue #63).
