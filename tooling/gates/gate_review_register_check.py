@@ -216,6 +216,12 @@ EXPECTED = {
     # `monomialEval_imp_eval`, so only `eval_iff_exists_monomial` stays
     # flagged (the counting bound's invocation surface).
     ("binder", "MonotoneApprox.lean", "eval_iff_exists_monomial"),
+    # Issue #74 Pass 3 item 2 (2026-09-22, commit 57d1d82): the Razborov
+    # counting bound `truncate_card_le_sum_choose` (|truncate r A| ≤ ∑_{k≤r}
+    # C(n,k)) — public proof-work API awaiting the CLIQUE pigeonhole
+    # instantiation (#74 Pass 3 item 3 / the Rung-4 assembly), not dead code.
+    # Same disposition as its sibling `truncate_size_le` above.
+    ("binder", "MonotoneApprox.lean", "truncate_card_le_sum_choose"),
         # Issue #75 Pass 1: the resolution substrate API (Resolution.lean) —
 
     # `eval` is referenced internally by Clause.eval but the scanner resolves
