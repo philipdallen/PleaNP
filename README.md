@@ -4,13 +4,18 @@ A Lean 4 / Mathlib project building machine-checked infrastructure for the **bar
 
 > "Plea" — because this is the road we're building toward P vs NP, not the claim we've reached it.
 
-> **Status (2026-09-22) — statement catalogue with a working substrate, not a proof library.**
-> The oracle substrate (`P^A ⊆ NP^A`, both directions) and the BGS diagonalization substrate
-> are machine-checked and zero-`sorry`. Relativization is a frozen statement carrying 2 tracked
-> `sorry`s; algebrization is rendered as statement definitions with no theorem yet; natural
-> proofs is scoped in design docs with no Lean artifact yet. **No barrier theorem is proven.**
-> [`docs/SORRY_TRACKER.md`](docs/SORRY_TRACKER.md) tracks every `sorry` and is machine-checked
-> against the code; [`docs/GRANT_READINESS.md`](docs/GRANT_READINESS.md) is the frank gap analysis.
+> **Status — oracle + BGS substrate zero-`sorry`; no barrier theorem proven.**
+> A statement catalogue with a working substrate, not a proof library. The oracle substrate
+> (`P^A ⊆ NP^A`, both directions) and the BGS diagonalization substrate are machine-checked and
+> zero-`sorry`. Relativization is a frozen statement carrying 2 tracked `sorry`s; algebrization
+> is rendered as statement definitions with no theorem yet; natural proofs is scoped in design
+> docs with no Lean artifact yet.
+>
+> This block is a **rolling summary, not a dated snapshot**, so it cannot go stale: the live
+> figures are machine-derived. Read [`docs/SORRY_TRACKER.md`](docs/SORRY_TRACKER.md) for the
+> `sorry` ledger (every `sorry` in `lean/PleaNP/` must appear in its table, so it is checked
+> against the code) and [`docs/GRANT_READINESS.md`](docs/GRANT_READINESS.md) for the frank gap
+> analysis of what exists versus what a reviewer will ask for.
 
 ## At a glance
 
@@ -133,6 +138,12 @@ fully GitHub-native in the meantime.
 Want the plain-words version — no math background needed?
 Read [`docs/EXPLAINER_P_VS_NP.md`](docs/EXPLAINER_P_VS_NP.md),
 a beginner-friendly telling of P vs NP and how PleaNP approaches it.
+
+Then read the project in this order:
+
+1. [`docs/ROADMAP.md`](docs/ROADMAP.md) — the rung ladder: what is built, what is next, and what "done" means at each rung.
+2. [`docs/GRANT_READINESS.md`](docs/GRANT_READINESS.md) — the frank gap analysis: what exists versus what a skeptical reviewer will ask for.
+3. [`docs/SORRY_TRACKER.md`](docs/SORRY_TRACKER.md) — the live `sorry` ledger, checked against the Lean code.
 
 ## Conventions
 
