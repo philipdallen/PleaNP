@@ -109,7 +109,7 @@ machine work. Two stdlib-only tools now compress it:
   hint). --all / --no-context / --json flags; exits 0/1/2.
 - **tooling/watch_leancheck.py** — polls a file until clean, then stops
   (prints iterations + elapsed); Ctrl-C re-checks for a final picture.
-- Tests: tooling/gates/tests/test_leancheck.py (6 tests, stdlib-only).
+- Tests: tooling/gates/tests/test_leancheck.py (7 tests, stdlib-only).
 - Practical how-to: docs/TOOLCHAIN_AGENTS.md sec 2.
 
 **Status (2026-09-13, confirmed live):** Plan E implemented and VERIFIED.
