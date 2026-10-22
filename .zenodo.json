@@ -1,0 +1,25 @@
+{
+  "title": "PleaNP: machine-checked infrastructure for the P vs NP barrier landscape",
+  "upload_type": "software",
+  "description": "Lean 4 / Mathlib infrastructure for the P vs NP barrier landscape: machine-checked oracle classes and the BGS diagonalization substrate, with barrier statements frozen as specs and the integrity gates that keep AI-assisted proof search honest.",
+  "creators": [
+    {
+      "name": "Allen, Philip"
+    }
+  ],
+  "license": "apache-2.0",
+  "keywords": [
+    "P vs NP",
+    "barrier theorems",
+    "Lean 4",
+    "Mathlib",
+    "formal verification"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/philipdallen/PleaNP",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    }
+  ]
+}

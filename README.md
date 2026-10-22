@@ -149,6 +149,10 @@ Then read the project in this order:
 
 This project follows Mathlib's naming and style conventions for all Lean code, with project-specific declarations under the `PleaNP` namespace. See `AGENTS.md` for the condensed project reference.
 
+## Cite this work
+
+Citation metadata lives in [`CITATION.cff`](CITATION.cff) (GitHub's "Cite this repository" uses it) and `.zenodo.json` (used if the owner enables the Zenodo GitHub integration).
+
 ## Acknowledgments
 
 This project takes inspiration from the **Maith** project (a Lean 4 IR extraction experiment) in its documentation discipline (decision log, audit resolution markers, AGENTS.md memory) — but PleaNP is an independent formalization project, not a representation-research project.

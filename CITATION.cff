@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "PleaNP: machine-checked infrastructure for the P vs NP barrier landscape"
+type: software
+authors:
+  - family-names: Allen
+    given-names: Philip
+repository-code: "https://github.com/philipdallen/PleaNP"
+license: Apache-2.0
+keywords:
+  - "P vs NP"
+  - "barrier theorems"
+  - "Lean 4"
+  - "Mathlib"
+  - "formal verification"
