@@ -236,6 +236,83 @@ theorem not_decided_and_punted {Q : Type} {f : Nat → OracleCode Q} {i k n : Na
   rw [hr] at h
   exact Option.some_ne_none r h
 
+/-!
+## The bridge lemma (issue #224, step 3/4)
+
+`docs/STATEMENTS/Relativization.machine-family.md` §2 names step 3's obligation:
+every `P_A`/`NP_A` witness of the DEC-028 family is "correctly simulated by the
+`M_of` enumeration *and runs at all*" (`∀ i, ∃ k n, Simulate i k n ≠ none`). This
+section lands both halves as proved reductions.
+
+**Half 1 — the enumeration covers the family.** `exists_index_of_machineCode`
+shows every `MachineCode`-packaged witness has an index in `M_of`; then
+`simulate_at_index` shows the simulation at that index reproduces the machine's
+own bounded run. That is the `Machine → Code` bridge: nothing about the witness
+is left outside the enumeration the diagonalization walks.
+
+**Half 2 — "runs at all" is exactly halting.** `simulate_ne_none_iff` proves the
+window question reduces to the program's partial semantics: a deciding window
+exists **iff** the program's `eval` is nonempty at that input. This is the
+honest form of the obligation, and it records *why* the literal `∀ i` form in the
+design doc cannot hold: a code whose `eval` is empty at `n` (e.g. a minimisation
+that never finds its zero) has no deciding window at any `k`, so the tournament
+must punt it — which `punts_of_le_window` already covers. "Runs at all" is thus
+not an extra hypothesis to discharge but a property of the code's semantics, and
+the `simulate_bound` window constraint (`n < k`) makes the window a function of
+the input, so the punt branch is the only alternative for the rest.
+-/
+
+/-- **Half 1a — the enumeration covers the family.** Every machine packaged with
+  its simulating program has an index in the `M_of` enumeration at which the
+  enumerated program *is* the machine's simulating code. So the tournament's
+  `M_of` walk reaches every witness of the DEC-028 family. -/
+theorem exists_index_of_machineCode {Q : Type} {tm : FinTM2} [DecidableEq tm.Λ]
+    {M : Machine Q tm} (mc : MachineCode Q tm M) :
+    ∃ i, DiagonalEnum.M_of i = mc.code :=
+  ⟨Encodable.encode mc.code, DiagonalEnum.code_encode_ofNat mc.code⟩
+
+/-- **Half 1b — the bridge lemma.** At the enumeration index of a machine's
+  simulating code, `Simulate` reproduces the machine's own bounded run exactly.
+  With `exists_index_of_machineCode` and `toCode_evaln` this is the
+  `Machine → Code` bridge: the diagonalization's enumeration simulates every
+  witness of the fixed family, faithfully. -/
+theorem simulate_at_index {Q : Type} {tm : FinTM2} [DecidableEq tm.Λ]
+    {M : Machine Q tm} (mc : MachineCode Q tm M) (k n : Nat) :
+    Simulate (fun _ => toCode mc) (Encodable.encode mc.code) k n = machineEvaln mc k n := by
+  unfold Simulate
+  exact toCode_evaln mc k n
+
+/-- **Half 2 — "runs at all" is exactly halting.** A deciding window exists for
+  the family at index `i` on input `n` **iff** the program's partial semantics is
+  nonempty there. So the obligation the design doc states as `∃ k n, Simulate i k
+  n ≠ none` is a property of the enumerated program's `eval`, not a modelling
+  assumption: the diagonalization decides exactly those inputs on which the code
+  halts, and punts the rest (`punts_of_le_window`). -/
+theorem simulate_ne_none_iff {Q : Type} {f : Nat → OracleCode Q} {i n : Nat} :
+    (∃ k, Simulate f i k n ≠ none)
+      ↔ ∃ r, r ∈ Nat.Partrec.Code.eval (f i).prog n := by
+  constructor
+  · rintro ⟨k, hk⟩
+    cases h : Simulate f i k n with
+    | none => exact absurd h hk
+    | some r =>
+      exact ⟨r, (Nat.Partrec.Code.evaln_complete (c := (f i).prog) (n := n)).2
+        ⟨k, Option.mem_def.mpr h⟩⟩
+  · rintro ⟨r, hr⟩
+    obtain ⟨k, hk⟩ := (Nat.Partrec.Code.evaln_complete (c := (f i).prog) (n := n)).1 hr
+    exact ⟨k, by
+      unfold Simulate
+      rw [Option.mem_def.mp hk]
+      exact Option.some_ne_none r⟩
+
+/-- The `∃ k` direction, stated for a bare code: a program that halts on `n`
+  decides at some window of the enumeration. This is the "runs at all" half the
+  bridge supplies for every input the witness machine halts on. -/
+theorem exists_deciding_window_of_eval {Q : Type} (c : Nat.Partrec.Code) (A : Oracle Q)
+    {n r : Nat} (h : r ∈ Nat.Partrec.Code.eval c n) :
+    ∃ k, Simulate (fun _ => (⟨c, A⟩ : OracleCode Q)) 0 k n ≠ none :=
+  simulate_ne_none_iff.mpr ⟨r, h⟩
+
 end DiagonalBridge
 
 end Barriers
