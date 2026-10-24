@@ -169,10 +169,11 @@ lemma toCode_prog {Q : Type} {tm : FinTM2} [DecidableEq tm.Λ]
     (toCode mc).prog = mc.code :=
   rfl
 
-/-- The "machine side" of the (removed) `#224` agreement: `machineEvaln` is the
-  bounded run of the paired program, indexed on the `DiagonalEnum` enumeration.
-  It depends on `M` only through the type index of `mc`; it is *not* the machine's
-  `step`-based run, which is what a genuine bridge would have to relate to. -/
+/-- The "machine side" named in the `#224` agreement: the bounded run of the
+  paired code, indexed on the `DiagonalEnum` enumeration. It depends on `M` only
+  through the type index of `mc`; it is *not* the machine's `step`-based run,
+  which is what a genuine bridge would have to relate to. Kept because
+  `simulate_at_index` and `exists_deciding_window_of_eval` use it. -/
 abbrev machineEvaln {Q : Type} {tm : FinTM2} [DecidableEq tm.Λ]
     {M : Machine Q tm} (mc : MachineCode Q tm M) (k n : Nat) : Option Nat :=
   Nat.Partrec.Code.evaln k (DiagonalEnum.M_of (Encodable.encode mc.code)) n

@@ -81,7 +81,7 @@ Each step's exact Lean obligation, with the file it lands in:
 |---|---|---|---|
 | 1 (this) | #222 | *(none — this document)* | `docs/STATEMENTS/Relativization.machine-family.md`, `docs/decisions/LOG.md` |
 | 2 | #223 | The concrete `FinTM2` family instance (`Γ := fun _ => Bool`, a query-tape index) + the canonical `decode` + the fiber-bijection lemma | `lean/PleaNP/Barriers/DiagonalFamily.lean` (new) |
-| 3 | #224 | `MachineCode.simulates`: every `P_A`/`NP_A` witness of the family is simulated by the `M_of` enumeration, and *runs at all* (`∀ i, ∃ k n, Simulate i k n ≠ none`) | `lean/PleaNP/Barriers/DiagonalBridge.lean` |
+| 3 | #224 | `MachineCode.simulates`: every `P_A`/`NP_A` witness of the family is simulated by the `M_of` enumeration, and *runs at all* (`∀ i, ∃ k n, Simulate i k n ≠ none`) | `lean/PleaNP/Barriers/DiagonalBridge.lean` — **not met.** #224 landed a vacuous `simulates` field (it did not mention `M` and was `rfl`-true by `code_encode_ofNat`); #226 removed it. Step 3 remains open: a genuine `Machine → Code` agreement relating a code's `evaln` to the machine's own `step`-based run. |
 | 4 | #225 | The D6 composition: `exists_separating_oracle_assembly` over the family + bridge, `sorry`-free | `lean/PleaNP/Barriers/DiagonalAssembly.lean` |
 
 ### The gap the family choice leaves open (carried to step 3)
