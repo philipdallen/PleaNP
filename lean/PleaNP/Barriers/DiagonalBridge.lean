@@ -5,7 +5,13 @@ import PleaNP.Barriers.DiagonalEnumOracle
 set_option warningAsError true
 
 /-!
-# BGS (b): the Machine-to-Code bridge — the obstacle, localized (issue #118)
+# BGS (b): the Machine-to-Code gap — the obstacle, localized (issue #118)
+
+**Status after `#226`:** the `#224` "Machine → Code bridge" was **vacuous** and is
+not a landed result. The module's proved content is (a) the enumeration fact
+`M_of` is surjective on codes, and (b) the simulate-or-punt split (`#155`, D6/O2).
+A genuine `Machine → Code` agreement — relating a code's `evaln` to the machine's
+own `step`-based run — remains the open step-3 obligation (`#226`).
 
 A faithful `Machine → Code` compiler is the tournament's last gap. This module
 used to record the obstruction as "*the raw `Machine Q tm` type carries an
@@ -89,25 +95,23 @@ theorem Code_countable : Countable Nat.Partrec.Code :=
   inferInstance
 
 /-!
-## The code-simulation bridge and the simulate-or-punt split (issue #155, D6/O2)
+## The code packaging and the simulate-or-punt split (issue #155, D6/O2)
 
-This is the concrete modeling map the corrected analysis (#118) called for, and
-the case split the tournament's license rests on.
+### `toCode` — a packaging, not a bridge (defect `#226`)
 
-### The bridge `toCode` — faithfulness via a *simulating* code
+`toCode mc` is `(prog := mc.code, oracle := M.oracle)`: a code together with the
+pinned oracle. The `#224` module described this as a faithful bridge whose code's
+bounded run reproduces the machine's run (`toCode_evaln`). **That claim was
+vacuous** (`#226`): `toCode_evaln` was proved from the `MachineCode.simulates`
+field, which did not mention the machine and, by `DiagonalEnum.code_encode_ofNat`,
+equated an expression with itself. No machine behaviour was transferred. The field
+and lemma are removed; what remains is the packaging `toCode`, the surjectivity of
+the `M_of` enumeration, and the simulate-or-punt split below.
 
-`toCode M` does **not** claim to decode the machine's oracle. It is `(prog :=
-M.code, oracle := M.oracle)`: the pinned program `M.code` together with the
-pinned oracle `M.oracle`. The bridge is faithful in the sense the diagonalization
-uses — the code's bounded run reproduces the machine's run (`toCode_evaln`), so a
-code produced from a machine and simulated for `k` steps yields exactly what
-running the machine yields.
-
-The *residual* freedom (which `M.code` to package) is exercised as a parameter of
-`toCode` rather than baked into a canonical choice. This is what keeps the bridge
-both honest and constructible: `#118` proved the oracle is pinned, so the whole
-machine-to-code content reduces to naming the simulating program — a modeling
-choice with a routine resolution.
+The *residual* freedom (which `code` to package) is a parameter of `toCode` rather
+than a canonical choice. Naming a code that genuinely *simulates* `M` — relating
+the code's `evaln` to the machine's `step`-based run — is the open `#226`
+obligation, not a landed result.
 
 ### The simulate-or-punt split
 
@@ -121,55 +125,71 @@ each index `i` and input `n` falls into exactly one case:
   the punt is *forced* whenever the window does not exceed the input length.
 -/
 
-/-- `M.code` is the `DiagonalEnum` program the machine's bounded run draws on:
-  `evaln k M.code n` is exactly `k` bounded steps of the machine on input `n`.
-  Supplying this projection is the machine-to-code modeling step (#155); it is a
-  *value*, not a new obligation, because `#118` showed the oracle is pinned. -/
+/-- A machine packaged with the program the `M_of` enumeration carries for it.
+
+  **This is a packaging, not a simulation.** The `#224` version of this structure
+  carried a field
+
+  `simulates : ∀ k n, evaln k code n = evaln k (M_of (encode code)) n`
+
+  intended to certify that the code reproduces the machine's own bounded run.
+  That field was **vacuous** (`#226`): the machine `M` did not occur in it, and by
+  `DiagonalEnum.code_encode_ofNat` both sides are the *same expression*, so it was
+  `rfl`-true for **any** machine and **any** code. It certified nothing about `M`.
+  The field is therefore removed rather than kept as a false certificate.
+
+  A genuine `Machine → Code` agreement — one that *mentions* `M` and relates
+  `evaln` on the code to the machine's own `step`-based run — is the open step-3
+  obligation (`#226`; see the "open obligation" note below). -/
 structure MachineCode (Q : Type) (tm : FinTM2) [DecidableEq tm.Λ] (M : Machine Q tm) where
   code : Nat.Partrec.Code
-  simulates : ∀ k n, Nat.Partrec.Code.evaln k code n =
-    Nat.Partrec.Code.evaln k (DiagonalEnum.M_of (Encodable.encode code)) n
 
-/-- **The code-simulation bridge.** Package a machine together with its simulating
-  program as an `OracleCode` in the `#154` code-space. The oracle field is the
-  machine's (pinned) oracle, so `toCode` commutes with the oracle projection. -/
+/-- **The code packaging.** Package a machine together with the program it is
+  paired with as an `OracleCode` in the `#154` code-space. The oracle field is the
+  machine's (pinned) oracle, so `toCode` commutes with the oracle projection.
+
+  The name is the `#224` one; note that it packages the paired `code` and does
+  **not** claim a `Machine → Code` simulation (see `MachineCode`). -/
 def toCode {Q : Type} {tm : FinTM2} [DecidableEq tm.Λ]
     {M : Machine Q tm} (mc : MachineCode Q tm M) : OracleCode Q :=
   { prog := mc.code, oracle := M.oracle }
 
-/-- The bridge preserves the machine's oracle: the packaged code queries exactly
-  the oracle the machine was built with. -/
+/-- The packaging preserves the machine's oracle: the packaged code queries
+  exactly the oracle the machine was built with. -/
 @[simp]
 lemma toCode_oracle {Q : Type} {tm : FinTM2} [DecidableEq tm.Λ]
     {M : Machine Q tm} (mc : MachineCode Q tm M) :
     (toCode mc).oracle = M.oracle :=
   rfl
 
-/-- The bridge packages the machine's simulating program. -/
+/-- The packaging carries the machine's paired program. -/
 @[simp]
 lemma toCode_prog {Q : Type} {tm : FinTM2} [DecidableEq tm.Λ]
     {M : Machine Q tm} (mc : MachineCode Q tm M) :
     (toCode mc).prog = mc.code :=
   rfl
 
-/-- The machine side of the agreement: `machineEvaln` is the bounded run of the
-  machine's simulating program, indexed on the `DiagonalEnum` enumeration. -/
+/-- The "machine side" of the (removed) `#224` agreement: `machineEvaln` is the
+  bounded run of the paired program, indexed on the `DiagonalEnum` enumeration.
+  It depends on `M` only through the type index of `mc`; it is *not* the machine's
+  `step`-based run, which is what a genuine bridge would have to relate to. -/
 abbrev machineEvaln {Q : Type} {tm : FinTM2} [DecidableEq tm.Λ]
     {M : Machine Q tm} (mc : MachineCode Q tm M) (k n : Nat) : Option Nat :=
   Nat.Partrec.Code.evaln k (DiagonalEnum.M_of (Encodable.encode mc.code)) n
 
-/-- **Bounded-simulation agreement.** The bridge is faithful: simulating the code
-  produced from a machine for `k` steps reproduces the machine's own bounded run.
-  This is the agreement `DiagonalAssembly.Simulate` needs — the tournament reads
-  the machine artifact (`machineEvaln`) from the code it enumerates. -/
-lemma toCode_evaln {Q : Type} {tm : FinTM2} [DecidableEq tm.Λ]
-    {M : Machine Q tm} (mc : MachineCode Q tm M) (k n : Nat) :
-    Nat.Partrec.Code.evaln k (toCode mc).prog n = machineEvaln mc k n :=
-  mc.simulates k n
+/- **The open obligation, stated precisely (`#226`).** The `#224` module claimed
+  `toCode_evaln`: that simulating the paired code reproduces the machine's own
+  bounded run. The claim it actually proved was `evaln k code n = evaln k
+  (M_of (encode code)) n`, true by the `encode`/`ofNat` roundtrip and independent
+  of `M`. The honest statement must relate the code's bounded run to the
+  machine's `step`-based run, so it *mentions* `M`. That proof — a real
+  `Machine → Code` compilation — is not landed, so no `toCode_evaln` is defined
+  here. -/
 
-/-- **The code-simulation bridge.** A bounded simulation of the family `f` at
-  index `i` under window `k` on input `n` — the per-index decision the
-  tournament reads before deciding to simulate or punt. -/
+/-- A bounded simulation of the family `f` at index `i` under window `k` on
+  input `n` — the per-index decision the tournament reads before deciding to
+  simulate or punt. (The name is the `#224` one; it simulates the *code* `(f i).prog`,
+  which is not claimed to be a code for any machine.) -/
 def Simulate {Q : Type} (f : Nat → OracleCode Q) (i k n : Nat) : Option Nat :=
   Nat.Partrec.Code.evaln k (f i).prog n
 
@@ -237,50 +257,50 @@ theorem not_decided_and_punted {Q : Type} {f : Nat → OracleCode Q} {i k n : Na
   exact Option.some_ne_none r h
 
 /-!
-## The bridge lemma (issue #224, step 3/4)
+## The bridge lemma (issue #224, step 3/4) — and its `#226` defect
 
 `docs/STATEMENTS/Relativization.machine-family.md` §2 names step 3's obligation:
 every `P_A`/`NP_A` witness of the DEC-028 family is "correctly simulated by the
-`M_of` enumeration *and runs at all*" (`∀ i, ∃ k n, Simulate i k n ≠ none`). This
-section lands both halves as proved reductions.
+`M_of` enumeration *and runs at all*" (`∀ i, ∃ k n, Simulate i k n ≠ none`).
 
-**Half 1 — the enumeration covers the family.** `exists_index_of_machineCode`
-shows every `MachineCode`-packaged witness has an index in `M_of`; then
-`simulate_at_index` shows the simulation at that index reproduces the machine's
-own bounded run. That is the `Machine → Code` bridge: nothing about the witness
-is left outside the enumeration the diagonalization walks.
+**Defect (#226).** The `#224` module claimed to land the `Machine → Code` half
+via `toCode_evaln`, resting on the `MachineCode.simulates` field. That field did
+not mention the machine `M`, and by `DiagonalEnum.code_encode_ofNat` its two sides
+are the *same expression* — so it was `rfl`-true for any machine and any code. The
+"bridge" therefore transferred no machine behaviour. The field and the lemma are
+removed; the module's honest content is what remains below, and the genuine
+`Machine → Code` agreement is an open obligation, not a landed result.
 
-**Half 2 — "runs at all" is exactly halting.** `simulate_ne_none_iff` proves the
-window question reduces to the program's partial semantics: a deciding window
-exists **iff** the program's `eval` is nonempty at that input. This is the
-honest form of the obligation, and it records *why* the literal `∀ i` form in the
-design doc cannot hold: a code whose `eval` is empty at `n` (e.g. a minimisation
-that never finds its zero) has no deciding window at any `k`, so the tournament
-must punt it — which `punts_of_le_window` already covers. "Runs at all" is thus
-not an extra hypothesis to discharge but a property of the code's semantics, and
-the `simulate_bound` window constraint (`n < k`) makes the window a function of
-the input, so the punt branch is the only alternative for the rest.
+**What *is* proved.** `exists_index_of_machineCode` is a real fact about the
+`M_of` enumeration: it is surjective onto codes (`Encodable.encode`/`ofNat` is a
+roundtrip on `Code`), so every code has an index. `simulate_at_index` is that same
+roundtrip restated — it is **not** a `Machine → Code` bridge, because nothing in it
+depends on `M`. `simulate_ne_none_iff` is a genuine statement about the
+enumeration's partial semantics (the `#155` D6/O2 split), independent of the
+removed field.
 -/
 
-/-- **Half 1a — the enumeration covers the family.** Every machine packaged with
-  its simulating program has an index in the `M_of` enumeration at which the
-  enumerated program *is* the machine's simulating code. So the tournament's
-  `M_of` walk reaches every witness of the DEC-028 family. -/
+/-- **The enumeration is surjective on codes.** Every code has an index in `M_of`
+  at which the enumerated program *is* that code. This is a property of the
+  `Encodable.encode`/`ofNat` roundtrip on `Nat.Partrec.Code`, **not** a
+  `Machine → Code` bridge: the `MachineCode` wrapper contributes only its `code`
+  field, and the machine `M` is unused. -/
 theorem exists_index_of_machineCode {Q : Type} {tm : FinTM2} [DecidableEq tm.Λ]
     {M : Machine Q tm} (mc : MachineCode Q tm M) :
     ∃ i, DiagonalEnum.M_of i = mc.code :=
   ⟨Encodable.encode mc.code, DiagonalEnum.code_encode_ofNat mc.code⟩
 
-/-- **Half 1b — the bridge lemma.** At the enumeration index of a machine's
-  simulating code, `Simulate` reproduces the machine's own bounded run exactly.
-  With `exists_index_of_machineCode` and `toCode_evaln` this is the
-  `Machine → Code` bridge: the diagonalization's enumeration simulates every
-  witness of the fixed family, faithfully. -/
+/-- **The `#224` "half 1b", restated honestly.** At the enumeration index of the
+  paired code, `Simulate` returns the same value as `machineEvaln` — but both sides
+  are the *same expression* after the `encode`/`ofNat` roundtrip, so this holds for
+  every machine and carries no information about `M`. It is kept because
+  `exists_deciding_window_of_eval` and downstream callers use the index, not
+  because it bridges machines to code. A genuine bridge is the open obligation. -/
 theorem simulate_at_index {Q : Type} {tm : FinTM2} [DecidableEq tm.Λ]
     {M : Machine Q tm} (mc : MachineCode Q tm M) (k n : Nat) :
     Simulate (fun _ => toCode mc) (Encodable.encode mc.code) k n = machineEvaln mc k n := by
-  unfold Simulate
-  exact toCode_evaln mc k n
+  unfold Simulate machineEvaln
+  rw [toCode_prog, DiagonalEnum.code_encode_ofNat]
 
 /-- **Half 2 — "runs at all" is exactly halting.** A deciding window exists for
   the family at index `i` on input `n` **iff** the program's partial semantics is
@@ -306,8 +326,8 @@ theorem simulate_ne_none_iff {Q : Type} {f : Nat → OracleCode Q} {i n : Nat} :
       exact Option.some_ne_none r⟩
 
 /-- The `∃ k` direction, stated for a bare code: a program that halts on `n`
-  decides at some window of the enumeration. This is the "runs at all" half the
-  bridge supplies for every input the witness machine halts on. -/
+  decides at some window of the enumeration. This is the "runs at all" half for a
+  code — a property of the code's partial semantics, independent of any machine. -/
 theorem exists_deciding_window_of_eval {Q : Type} (c : Nat.Partrec.Code) (A : Oracle Q)
     {n r : Nat} (h : r ∈ Nat.Partrec.Code.eval c n) :
     ∃ k, Simulate (fun _ => (⟨c, A⟩ : OracleCode Q)) 0 k n ≠ none :=
