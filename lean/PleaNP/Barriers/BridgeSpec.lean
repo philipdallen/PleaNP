@@ -129,6 +129,57 @@ def bridge_statement (M : Machine Q tm)
     (ia : List (tm.Γ tm.k₀) → Nat) (oa : Cfg Q tm → Nat) : Prop :=
   BridgeStatement M ia oa
 
+/-!
+## Step 3b, first result: the as-stated bridge is **refutable** (`#230`)
+
+The step-3a statement above quantifies over *arbitrary* input encodings `ia` and
+output decodings `oa`. In that generality it is false, and the obstruction is
+elementary: `MachineCodeBridge` carries a **single** code, independent of the
+input word, so `Nat.Partrec.Code.evaln k code ·` is a fixed partial function. If
+two words encode to the same numeric input (`ia w₁ = ia w₂`) and the machine
+halts from both within the *same* window `k` at configurations whose decodings
+differ (`oa cfg₁ ≠ oa cfg₂`), the one code would have to return two different
+values at the same argument.
+
+This is the honest form of the step-3b obligation: not a bare proof of
+`BridgeStatement`, but a refutation that fixes the hypotheses a genuine bridge
+must carry. Two are needed and neither is in the statement:
+
+1. **`ia` must be injective on the reachable inputs** — otherwise two inputs
+   collide and the code cannot separate their outputs (the theorem below).
+2. **The machine must be effective** — `Machine.oracle` is an arbitrary
+   `Q → Bool`, but a `Nat.Partrec.Code` is a plain partial-recursive program with
+   no oracle; reproducing an oracle query is not a `Nat.Partrec.Code` operation.
+   This is the residual gap step 3c's D6 assembly must discharge by fixing a
+   concrete machine family and a canonical `decode` (see `DiagonalBridge`).
+
+The lemma below records the collision obstruction: whenever two inputs share an
+`ia` value and halt at same-window configurations with different `oa` values, no
+bridge exists. An injective `ia` is therefore a necessary hypothesis, and it is
+absent from the step-3a statement.
+-/
+
+/-- **Step 3b obstruction.** No `MachineCodeBridge` exists when a single code
+  would have to return two different values at one argument: two inputs with
+  equal `ia`, halting in the same window at configurations with unequal `oa`.
+
+  The `code` field is input-independent, so `evaln k code (ia w₁)` and
+  `evaln k code (ia w₂)` are the *same* application once `ia w₁ = ia w₂`; the two
+  `simulates` instances then force `oa cfg₁ = oa cfg₂`, contradicting `hoa`. -/
+theorem not_bridgeStatement_of_collision
+    {M : Machine Q tm} {ia : List (tm.Γ tm.k₀) → Nat} {oa : Cfg Q tm → Nat}
+    {w₁ w₂ : List (tm.Γ tm.k₀)} {k : Nat} {cfg₁ cfg₂ : Cfg Q tm}
+    (hia : ia w₁ = ia w₂)
+    (h₁ : HaltsWithin M w₁ k cfg₁) (h₂ : HaltsWithin M w₂ k cfg₂)
+    (hoa : oa cfg₁ ≠ oa cfg₂) :
+    ¬ BridgeStatement M ia oa := by
+  rintro ⟨b⟩
+  have e₁ := b.simulates w₁ k cfg₁ h₁
+  have e₂ := b.simulates w₂ k cfg₂ h₂
+  rw [hia] at e₁
+  rw [e₁] at e₂
+  exact hoa (Option.some.inj e₂)
+
 end BridgeSpec
 
 end Barriers
