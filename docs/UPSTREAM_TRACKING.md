@@ -2,7 +2,7 @@
 
 The computational-model substrate (Rung 2) is *not* PleaNP's to build — it's being actively contested by multiple efforts upstreaming into Mathlib. This document tracks them so PleaNP imports the right thing rather than reinventing or picking sides.
 
-Last reviewed: 2026-10-19 (re-verified all six tracked efforts against primary sources and added the two ROADMAP-named-but-untracked efforts — Reitwiessner (#7) and Keßler's Mathlib fork (#8). Material changes since 2026-08-18: PR #33132 **closed unmerged** (2026-09-17, author moving to cslib); complexitylib default branch renamed `master`→`dev` and toolchain bumped to v4.35.0-rc3; descriptive-complexity released v1.3.0 (Mathlib v4.34.0); the Simas arXiv id cited in effort #4 does **not** resolve to the described paper. See each row for its verification date.) This is a living document — update when upstream lands.
+Last reviewed: 2026-10-28 (added cslib as a numbered row — effort #9 — verified against its primary source, and updated the #2 stance line to point at it. The eight prior rows were last verified 2026-10-19; this run re-verified cslib only.) Material changes since the 2026-10-19 review: cslib now carries SingleTape **and** MultiTape Turing-machine models, a typed Boolean-circuit development, and a `PolyTimeComputable` predicate — but still no oracle machines, no P/NP classes, and no relativization content. See each row for its verification date. This is a living document — update when upstream lands.
 
 ---
 
@@ -23,7 +23,7 @@ Last reviewed: 2026-10-19 (re-verified all six tracked efforts against primary s
 - **Author:** BoltonBailey
 - **Approach:** A *new* `FinTM0` bundled type with `EvalsTo`/`EvalsToInTime`, rather than extending existing `TM1`.
 - **Status (2026-10-19):** **Dead as a Mathlib PR.** The author has redirected the work to `cslib` (Lean Computer Science Library, `leanprover/cslib`), whose `Cslib/Computability/Machines/Turing/` tree now carries `SingleTape` and `MultiTape` machine models (verified 2026-10-19).
-- **PleaNP stance:** **Superseded — do not watch #33132.** The `FinTM0` PR is closed; the same author is now building machine models in `cslib`. Follow `cslib` instead (a new candidate effort; not yet tracked as a numbered row here — flagged for the next review).
+- **PleaNP stance:** **Superseded — do not watch #33132.** The `FinTM0` PR is closed; the same author is now building machine models in `cslib`. Follow `cslib` instead — now tracked as **effort #9** (added 2026-10-28).
 
 ### 3. `descriptive-complexity` (separate repo)
 
@@ -71,6 +71,19 @@ Last reviewed: 2026-10-19 (re-verified all six tracked efforts against primary s
 - **Approach:** A Mathlib fork with work on computability theory — formalizing the P and NP classes and proving facts about them (per `docs/PRIOR_ART.md`, quoting the fork README Feb 2026; progress notes on a public Hedgedoc pad).
 - **Status (2026-10-19):** **Untracked until now** (ROADMAP-named, not previously in this doc). Last confirmed description is from 2026-08-18-era `PRIOR_ART.md`; the host is not reachable from the sandbox, so **no status change can be recorded** — this row is marked stale-unknown rather than silently carried forward.
 - **PleaNP stance:** Track as a standalone formalization. No import path (it is a fork, not a released library); watch only. Re-verify when the host is reachable, or if the work surfaces as an upstream Mathlib PR.
+
+### 9. `cslib` — Lean Computer Science Library (leanprover/cslib)
+
+- **Source:** https://github.com/leanprover/cslib — verified 2026-10-28: **reachable**, default branch `main`, head `f4a4725` (2026-10-27, *"chore: support precompilation in bench suite (#1167)"*); `lean-toolchain` = `leanprover/lean4:v4.36.0-rc1`; latest release `v4.36.0-rc1` (2026-10-16). Apache-2.0. 209 `.lean` files under `Cslib/`. This is the successor effort #2 redirected to (closing comment on mathlib4 #33132, 2026-09-17).
+- **Approach:** A general Lean CS library spanning `Algorithms`, `Computability`, `Crypto`, `Foundations`, `Languages`, `Logics`, `MachineLearning`, `Probability`, `Tactic`. Relevant here is `Cslib/Computability/`, whose README states its scope includes "automata, complexity classes, formal languages … and other machine models", with "multiple computational models" as an explicit design principle.
+- **What it has (verified 2026-10-28):**
+  - **Turing-machine models** under `Cslib/Computability/Machines/Turing/`: `Cslib/Computability/Machines/Turing/SingleTape/` (author Fabrizio Montesi, Bolton Bailey, Pim Spelier, Daan van Gent) and `Cslib/Computability/Machines/Turing/MultiTape/` (23 files, author Christian Reitwiessner, Samuel Schlesinger, Aviv Bar Natan). This is a different author group from the SingleTape files, and overlaps the Reitwiessner effort (#7) — the multi-tape model has moved from the standalone `chriseth/complexity` repo into cslib.
+  - **Polynomial-time computability:** `PolyTimeComputable` in `Cslib/Computability/Machines/Turing/SingleTape/Deterministic.lean`: "A Turing machine + a polynomial time function + a proof it outputs `f` in at most `time(input.length)` steps", with `id`, `comp`, and `withMonotoneBound`.
+  - **Typed Boolean circuits** under `Cslib/Computability/Circuit/` (23 files): signatures/interpretations independent of gate basis, topological programs with designated output wires, plus `Cslib/Computability/Circuit/Complexity.lean` (`complexity`/`ecomplexity`, least gate count on a support), `Cslib/Computability/Circuit/RelativeComplexity.lean` (`C(f | g)`), `Cslib/Computability/Circuit/Boolean/Complexity.lean`, `Cslib/Computability/Circuit/Boolean/Shannon.lean`, `Cslib/Computability/Circuit/Boolean/Lupanov.lean`, `Cslib/Computability/Circuit/Depth.lean`, `Cslib/Computability/Circuit/Synthesis.lean`.
+  - Also: automata (DA/NA/TwoWayNA/Büchi), `URM` register machines, `QueryComplexity/`, distributed `FLP`, and circuit `RelativeComplexity`.
+- **What it explicitly lacks (verified 2026-10-28, code search + tree):** **no oracle machines and no relativization** — the only occurrence of "oracle" in `Cslib/` is an unrelated doc phrase in `Cslib/Foundations/Data/PFunctor/Free.lean`; grep for `relativiz` returns zero hits. **No P/NP complexity classes** — grep for `NP`, `PClass`, `ComplexityClass` returns no class definitions (only `PolyTimeComputable` and circuit complexity, which are machine/complexity-*measure* layers, not the classes). No Cook-Levin, no barrier theorems.
+- **Toolchain:** `v4.36.0-rc1` — an rc prerelease, and five minor versions past PleaNP's stable `v4.31.0` pin. The gap has widened since this entry's predecessor effort #2 was written (was v4.34/rc2 in the DEC-025 rationale, now v4.36.0-rc1 + rc).
+- **PleaNP stance:** **Watch only — do not import.** cslib is the most active and most credible upstream machine-model effort (the #33132 redirect lands here, and the multi-tape model absorbs effort #7), so it is the right thing to *follow*. But it provides none of the layer PleaNP exists to build: no oracle machines, no relativization, no P/NP classes. Its toolchain is an rc five minors ahead of PleaNP's stable pin, so importing would repeat the complexitylib trade (DEC-025) against a *larger* surface (209 files here vs complexitylib's ~1685, but still far more than the Rung-4 slice needs). No import decision is made here — per the issue, a stance-changing fact is reported rather than decided. Revisit if cslib pins a stable toolchain that PleaNP tracks **and** lands oracle-machine or P/NP content.
 
 ---
 

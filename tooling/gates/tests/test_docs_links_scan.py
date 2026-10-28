@@ -71,6 +71,18 @@ class ResolutionTest(unittest.TestCase):
     def test_planned_lean_file_is_whitelisted(self):
         self.assertTrue(d._whitelisted("NaturalProofs.lean"))
 
+    def test_upstream_cslib_path_is_whitelisted(self):
+        # Upstream cslib (leanprover/cslib) is a foreign tree cited by the
+        # upstream-tracking rows; same class as Mathlib/. See UPSTREAM_TRACKING #9.
+        self.assertTrue(d._whitelisted(
+            "Cslib/Computability/Circuit/Complexity.lean"))
+        self.assertTrue(d._whitelisted("Cslib/Computability/Machines/Turing/"))
+
+    def test_nonexistent_local_path_is_still_broken(self):
+        # The cslib rule must not swallow local refs: a missing PleaNP-side path
+        # is still flagged.
+        self.assertFalse(d._whitelisted("docs/NO_SUCH_DOC_ZZZ.md"))
+
 
 class ScanOnMainTest(unittest.TestCase):
     def test_main_tree_is_clean(self):

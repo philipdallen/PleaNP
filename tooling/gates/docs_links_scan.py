@@ -63,6 +63,10 @@ def _find_refs(text: str) -> set[str]:
 def _whitelisted(s: str) -> bool:
     if "Mathlib/" in s or s.startswith("Mathlib"):
         return True
+    # Upstream cslib paths (leanprover/cslib) — foreign tree cited by the
+    # upstream-tracking rows, same class as Mathlib/ above.
+    if s.startswith("Cslib/") or "Cslib/" in s:
+        return True
     if "<" in s or ">" in s:
         return True
     if s.endswith((".yaml", ".yml")):
