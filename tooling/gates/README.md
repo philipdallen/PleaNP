@@ -14,6 +14,9 @@ Scans for the **dishonest placeholder** pattern: definitions/theorems whose bodi
 - `def` with `↔ True` in the body — vacuous equivalence (the `DecidesInTime := ∀ x, x ∈ L ↔ True` pattern).
 - `def` with `:= True` — bare equality to True.
 - `def` with `:= none` — constant failure masquerading as an implementation (the `stepCountByEvalsToInTime ... := none` pattern).
+- `structure`/`class` field whose type never mentions one of the enclosing declaration's parameters (the #224/#226 phantom-parameter class, DEC-029) — report-only. The withdrawn `MachineCode.simulates` field never mentioned its machine parameter `M`, so it certified no behaviour while the syntactic patterns above could not see it. Known-legit phantom parameters are allowlisted in `PHANTOM_PARAM_ALLOWLIST` with a recorded reason; a phantom parameter in a *new* structure is flagged.
+
+**Tier-1-occurrence only.** The parameter-occurrence check certifies only that a field's parameters occur, never that the field is *meaningful* — a field whose parameters all occur can still be vacuous.
 
 **Does NOT catch** vacuity that requires understanding what a definition *means* (e.g. a real-looking but subtly-wrong predicate) — that is Gate 4 (read-back) and the review layer's job. "Gate 5 passed" = Tier 1 + review, not Tier 1 alone.
 

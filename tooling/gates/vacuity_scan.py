@@ -17,6 +17,20 @@ Does NOT flag the HONEST placeholder: `: True := by sorry` (caught by Gate 6),
 or a clearly-marked `-- placeholder` comment. A `sorry` is honest; a `trivial`
 proof of `True` is a fake success.
 
+It also carries a report-only **parameter-occurrence** check for `structure`/
+`class` fields (issue #234): a field whose type never mentions one of the
+enclosing declaration parameters is flagged. This is the #224/#226 failure mode
+(DEC-029): the withdrawn `MachineCode.simulates` field never mentioned the
+machine parameter `M`, so it certified no machine behaviour -- yet the syntactic
+`True`/`↔ True`/`rfl`/`none` patterns above could not see it. The check is
+mechanical (parameter-occurrence over the field type, comments stripped) and
+needs no Lean semantics.
+
+Tier-1-occurrence ONLY: passing it does NOT certify a field is meaningful, only
+that its parameters occur. A field whose parameters all occur can still be
+vacuous (the check says nothing about *what* the field means). Known-legit
+phantom parameters are allowlisted in `PHANTOM_PARAM_ALLOWLIST` below.
+
 This is the Tier 1 of Gate 5 (non-triviality): static, no Lean semantics.
 Like hygiene_scan.py (Gate 6 Tier 1), it CANNOT catch vacuity that requires
 understanding what a definition *means* -- that is Gate 4 (read-back) and
@@ -74,6 +88,118 @@ DECL_START_RE = re.compile(
     r"^(def|theorem|lemma|structure|class|inductive|instance|abbrev|axiom|constant)\s+(\S+)",
     re.MULTILINE,
 )
+
+
+# ---------------------------------------------------------------------------
+# Parameter-occurrence check (issue #234). Report-only.
+#
+# A `structure`/`class` field whose type never mentions one of the enclosing
+# declaration's parameters is the #224/#226 vacuity shape: the field looks like
+# a constraint but cannot constrain the parameter it omits.
+#
+# Known-legit phantom parameters, with the reason each is a false positive for
+# this report-only check. Key: (decl_name, field_name, param_name). Every entry
+# below was surfaced by the check on the 2026-10-29 tree and dispositioned here
+# rather than silently dropped (issue #234 DoD 2). A parameter that is phantom in
+# a *new* structure is NOT covered by this list and will be flagged.
+PHANTOM_PARAM_ALLOWLIST: dict[tuple[str, str, str], str] = {
+    # Sibling field carries the parameter; the flagged field is a data carrier.
+    ("MachineCodeBridge", "code", "M"): "sibling `simulates` carries M",
+    ("MachineCodeBridge", "code", "oa"): "sibling `simulates` carries oa",
+    ("OracleCode", "prog", "Q"): "sibling `oracle` carries Q",
+    ("IsRandomRestriction", "nonneg", "p"): "sibling `fixedCount_law` carries p",
+    ("IsRandomRestriction", "sum_one", "p"): "sibling `fixedCount_law` carries p",
+    ("Cfg", "cfg", "Q"): "sibling `oracle` carries Q",
+    ("Cfg", "oracle", "tm"): "sibling `cfg` carries tm",
+    ("Machine", "oracle", "tm"): "sibling `decode` carries tm",
+    ("Machine", "queryLabel", "Q"): "siblings `oracle`/`decode` carry Q",
+    ("Machine", "yesLabel", "Q"): "siblings `oracle`/`decode` carry Q",
+    ("Machine", "noLabel", "Q"): "siblings `oracle`/`decode` carry Q",
+    # Documented packaging (DEC-029): the structure deliberately carries no
+    # simulation claim, so its parameters are phantom by design, not by defect.
+    ("MachineCode", "code", "Q"): "documented packaging, no simulation claim",
+    ("MachineCode", "code", "tm"): "documented packaging, no simulation claim",
+    ("MachineCode", "code", "M"): "documented packaging, no simulation claim",
+}
+
+# Lean keywords / binders / punctuation that are never parameter names, so we do
+# not treat `Type`/`Prop`/`where`/`:=` as a structure parameter.
+_NON_PARAM_TOKENS = {
+    "Type", "Type*", "Prop", "Sort", "where", "extends", "deriving",
+    "structure", "class", "instance", "abbrev", "def", "theorem", "lemma",
+}
+
+# Identifiers of length >= 2 that look like a parameter reference. We require
+# a word boundary and exclude single characters, so a parameter `n` is matched
+# as `n` only when it occurs as a standalone token.
+_IDENT_RE = re.compile(r"[A-Za-z_\u03b1-\u03c9][A-Za-z0-9_'\u03b1-\u03c9]*")
+
+
+def _split_params(signature: str) -> list[str]:
+    """Extract the parameter names from a structure/class signature.
+
+    `signature` is the text from just after the decl name up to the `where`.
+    Handles explicit binders `(Q : Type)`, `(tm : FinTM2)`, typeclass binders
+    `[DecidableEq tm.Λ]`, and implicit `{Q : Type}`. A bare token group with no
+    colon (e.g. an index) is skipped: only binders introduce parameters.
+    """
+    params: list[str] = []
+    # Bindered groups: ( ... ), { ... }, [ ... ].
+    for m in re.finditer(r"[\(\[\{]([^\(\)\[\]\{\}]*)[\)\]\}]", signature):
+        group = m.group(1)
+        if ":" not in group:
+            continue
+        head = group.split(":", 1)[0].strip()
+        # Multiple names may be bound: `(a b : Nat)`.
+        for name in head.split():
+            if name and name not in _NON_PARAM_TOKENS:
+                params.append(name)
+    return params
+
+
+def _check_phantom_params(kind: str, name: str, block: str) -> list[tuple[str, str, int]]:
+    """Return (field_name, param_name, field_offset) triples where a field's
+    type never mentions a parameter of the enclosing structure/class.
+
+    `field_offset` is the offset of the field line within `block`, so the caller
+    can report the field's own line rather than the declaration's. Report-only;
+    `block` is the declaration block (comments already stripped) starting at
+    `structure`/`class`.
+    """
+    if kind not in ("structure", "class"):
+        return []
+    # Split the signature (name .. `where`) from the field body.
+    where_m = re.search(r"\bwhere\b", block)
+    if where_m is None:
+        return []
+    where_idx = where_m.start()
+    name_idx = block.find(name)
+    if name_idx == -1:
+        return []
+    signature = block[name_idx + len(name):where_idx]
+    body = block[where_idx:]
+    params = _split_params(signature)
+    if not params:
+        return []
+
+    triples: list[tuple[str, str, int]] = []
+    # Field lines: indented `field : type` (not `:=`). Continuation lines of a
+    # type are more-indented and belong to the preceding field.
+    field_re = re.compile(r"^[ \t]+([A-Za-z_][A-Za-z0-9_']*)\s*:(?!=)", re.MULTILINE)
+    matches = list(field_re.finditer(body))
+    for i, m in enumerate(matches):
+        field_name = m.group(1)
+        type_end = matches[i + 1].start() if i + 1 < len(matches) else len(body)
+        field_type = body[m.end():type_end]
+        type_idents = set(_IDENT_RE.findall(field_type))
+        field_offset = where_idx + m.start()
+        for p in params:
+            if p in type_idents:
+                continue
+            if (name, field_name, p) in PHANTOM_PARAM_ALLOWLIST:
+                continue
+            triples.append((field_name, p, field_offset))
+    return triples
 
 
 def _split_decls(src: str) -> list[tuple[str, str, int]]:
@@ -135,6 +261,13 @@ def scan_file(path: Path) -> list[Finding]:
                 findings.append(Finding(path, line_no, "vacuous_eq_true", name, snippet))
             if DEF_NONE_RE.search(block):
                 findings.append(Finding(path, line_no, "def_none", name, snippet))
+
+        for field_name, param, field_off in _check_phantom_params(kind, name, block):
+            field_line = src.count("\n", 0, start + field_off) + 1
+            findings.append(Finding(
+                path, field_line, "phantom_param", f"{name}.{field_name}",
+                f"parameter `{param}` never occurs in this field's type",
+            ))
 
     return findings
 
