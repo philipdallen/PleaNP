@@ -17,6 +17,42 @@ A Lean 4 / Mathlib project building machine-checked infrastructure for the **bar
 > against the code) and [`docs/GRANT_READINESS.md`](docs/GRANT_READINESS.md) for the frank gap
 > analysis of what exists versus what a reviewer will ask for.
 
+### Latest gate evidence
+
+Timestamped output of the five integrity gates, run against the CI clean-module
+list (36 files, the exact list in [`.github/workflows/ci.yml`](.github/workflows/ci.yml))
+at the HEAD below. Reproduce it with `bash tooling/gates/front_page_evidence.sh`
+(requires the Lean toolchain and `lake exe cache get`; the `#barrier_check` line
+reads back the build log the script tells you to produce).
+
+```
+captured_utc=2026-11-01T00:49:55Z
+head=521fd2913960d821e1e2df5e41171d93e01f76aa
+modules=36 (CI clean-module list)
+
+$ python3 tooling/gates/hygiene_scan.py --prove-stage <36 modules>
+  0 violation(s), 9 review item(s)
+
+$ python3 tooling/gates/vacuity_scan.py <36 modules>
+Gate 5 (Tier 1) clean: no trivially-true/vacuous patterns in 36 path(s).
+
+$ python3 tooling/gates/model_consistency_scan.py <36 modules>
+Gate 2 (Tier 1) clean: no local redefinitions or forbidden namespaces in 36 path(s).
+
+$ python3 tooling/gates/binder_usage_scan.py --allow-unreferenced '^(exists_equalizing_oracle|exists_separating_oracle|smoke_accepts_true|smoke_rejects_false|v5_smoke_accepts_true|v5_smoke_rejects_false)$' <36 modules>
+  0 violation(s), 152 review item(s)
+
+$ cd lean && lake build <36 modules> 2>&1 | tee /tmp/barcheck.log
+$ python3 ../tooling/gates/barrier_check_test.py /tmp/barcheck.log
+barrier-check verdict harness ok: all 9 verdicts present in /tmp/barcheck.log.
+```
+
+Zero violations on all four scanners; the `#barrier_check` verdict harness
+asserts all 9 elaborator verdicts. The `[REVIEW]` items are non-blocking notes
+(tracked in [`docs/GATE_REVIEW_NOTES.md`](docs/GATE_REVIEW_NOTES.md)), not
+failures. Full-tree scans still show the tracked `sorry`s documented in
+[`docs/SORRY_TRACKER.md`](docs/SORRY_TRACKER.md); CI gates on the clean modules.
+
 ## At a glance
 
 - **Building the missing infrastructure for proofs no one has machine-checked yet**: the P vs NP barrier theorems (relativization, natural proofs, algebrization) have no formal proof in any proof assistant. The machine-grounded oracle/class foundation is complete and zero-`sorry`; the barrier statements are frozen as specs, with the proofs as tracked open work.
